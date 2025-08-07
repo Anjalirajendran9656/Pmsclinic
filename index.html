@@ -192,18 +192,34 @@
             }
         }
 
-        function parseCSV(text) {
-            const rows = text.split(/\r?\n/).map(row => row.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
-            if (rows.length < 2) return [];
-            const headers = rows[0].map(h => h.toLowerCase());
-            return rows.slice(1).map(row => {
-                let obj = {};
-                headers.forEach((header, i) => {
-                    obj[header] = row[i] || '';
-                });
-                return obj;
-            }).filter(item => item.question); // Only include rows that have a question
+       function parseCSV(text) {
+    const lines = text.split(/\r?\n/);
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].toLowerCase().split(',');
+    const result = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i]) continue;
+
+        // This regex splits by commas only if they are not inside double quotes.
+        const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+        const values = lines[i].split(regex);
+        
+        const obj = {};
+        for (let j = 0; j < headers.length; j++) {
+            let value = values[j] || '';
+            // Removes leading/trailing quotes and trims whitespace.
+            value = value.trim().replace(/^"|"$/g, '').trim();
+            obj[headers[j]] = value;
         }
+        
+        if (obj.question) { // Only include rows that have a question
+            result.push(obj);
+        }
+    }
+    return result;
+}
 
         // --- NLP HELPER FUNCTIONS ---
         function removeStopWords(text) {
@@ -433,5 +449,6 @@
 </body>
 
 </html>
+
 
 
