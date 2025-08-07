@@ -193,7 +193,6 @@
         
         function calculateSimilarity(query, dbQuestion) {
             const queryKeywords = extractKeywords(query);
-            const dbKeywords = extractKeywords(dbQuestion);
             let score = 0;
             let exactMatchBonus = 0;
             const queryLower = query.toLowerCase();
@@ -214,7 +213,9 @@
             if (!query.trim() || questionsData.length === 0) return null;
             const scoredResults = questionsData.map(item => ({ ...item, score: calculateSimilarity(query, item.question) }));
             const relevantResults = scoredResults.filter(item => item.score > 0).sort((a, b) => b.score - a.score);
-            if (relevantResults.length > 0 && relevantResults[0].score >= 1) {
+            
+            // --- FIX 1: Increased score threshold for a better match ---
+            if (relevantResults.length > 0 && relevantResults[0].score >= 5) {
                 return relevantResults[0];
             }
             return null;
@@ -253,10 +254,13 @@
         }
 
         function displayAnswer(qaItem) {
-            // This 'if' block handles a found answer
+            // --- FIX 2: Added console.log for debugging ---
+            // Press F12 in your browser to see this output in the "Console" tab.
+            console.log("Data for found answer:", qaItem);
+
             if (qaItem) {
                 answerText.textContent = qaItem.answer;
-                // Check if there is a video link
+                // Check if there is a video link. Make sure the header in your sheet is exactly 'video' (lowercase).
                 if (qaItem.video) {
                     viewVideoBtn.href = qaItem.video;
                     viewVideoBtn.classList.remove('hidden');
@@ -264,7 +268,6 @@
                     viewVideoBtn.classList.add('hidden');
                 }
             } 
-            // This 'else' block handles when no answer is found
             else {
                 answerText.textContent = "Sorry, I couldn't find an answer to that question. Please try rephrasing it or contact support.";
                 viewVideoBtn.classList.add('hidden');
@@ -274,9 +277,8 @@
         function populateSuggestedQuestions() {
             if (questionsData.length > 0) {
                 suggestedQuestionsList.innerHTML = '';
-                // Display the first 8 questions from the sheet
                 const suggested = questionsData.slice(0, 8);
-                suggested.forEach((item, index) => {
+                suggested.forEach((item) => {
                     const li = document.createElement('li');
                     li.innerHTML = `<span class="text-blue-500 mr-2">&#8227;</span>${item.question}`;
                     li.className = 'question-link hover:text-blue-600 cursor-pointer transition-colors';
@@ -345,3 +347,4 @@
     </script>
 </body>
 </html>
+
