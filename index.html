@@ -114,20 +114,11 @@
                 </div>
             </section>
 
-            <section class="grid md:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">Recent Questions</h2>
-                    <ul id="recentQuestionsList" class="space-y-3 text-gray-600">
-                        <li><div class="loader"></div>Loading...</li>
-                    </ul>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">Frequently Asked Questions</h2>
-                    <ul id="faqList" class="space-y-3 text-gray-600">
-                        <li><div class="loader"></div>Loading...</li>
-                    </ul>
-                </div>
+            <section class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">Your suggested questions</h2>
+                <ul id="suggestedQuestionsList" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-gray-600">
+                    <li><div class="loader"></div>Loading...</li>
+                </ul>
             </section>
         </main>
 
@@ -168,8 +159,7 @@
         const submitSpinner = document.getElementById('submitSpinner');
         const answerText = document.getElementById('answerText');
         const viewImageBtn = document.getElementById('viewImageBtn');
-        const recentQuestionsList = document.getElementById('recentQuestionsList');
-        const faqList = document.getElementById('faqList');
+        const suggestedQuestionsList = document.getElementById('suggestedQuestionsList');
         const imageModal = document.getElementById('imageModal');
         const modalImage = document.getElementById('modalImage');
         const closeModalBtn = document.getElementById('closeModalBtn');
@@ -187,39 +177,33 @@
             } catch (error) {
                 console.error('Error fetching or parsing sheet data:', error);
                 answerText.textContent = "Error: Could not load data from the Google Sheet. Please check the URL and sharing settings.";
-                recentQuestionsList.innerHTML = '<li>Could not load data.</li>';
-                faqList.innerHTML = '<li>Could not load data.</li>';
+                suggestedQuestionsList.innerHTML = '<li>Could not load data.</li>';
             }
         }
 
-       function parseCSV(text) {
-    const lines = text.split(/\r?\n/);
-    if (lines.length < 2) return [];
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) return [];
 
-    const headers = lines[0].toLowerCase().split(',');
-    const result = [];
+            const headers = lines[0].toLowerCase().split(',');
+            const result = [];
 
-    for (let i = 1; i < lines.length; i++) {
-        if (!lines[i]) continue;
-
-        // This regex splits by commas only if they are not inside double quotes.
-        const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
-        const values = lines[i].split(regex);
-        
-        const obj = {};
-        for (let j = 0; j < headers.length; j++) {
-            let value = values[j] || '';
-            // Removes leading/trailing quotes and trims whitespace.
-            value = value.trim().replace(/^"|"$/g, '').trim();
-            obj[headers[j]] = value;
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i]) continue;
+                const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+                const values = lines[i].split(regex);
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    let value = values[j] || '';
+                    value = value.trim().replace(/^"|"$/g, '').trim();
+                    obj[headers[j]] = value;
+                }
+                if (obj.question) {
+                    result.push(obj);
+                }
+            }
+            return result;
         }
-        
-        if (obj.question) { // Only include rows that have a question
-            result.push(obj);
-        }
-    }
-    return result;
-}
 
         // --- NLP HELPER FUNCTIONS ---
         function removeStopWords(text) {
@@ -325,37 +309,20 @@
             }
         }
         
-        function populateRecentQuestions() {
+        function populateSuggestedQuestions() {
             if (questionsData.length > 0) {
-                recentQuestionsList.innerHTML = '';
-                // Display the last 5 questions from the sheet as "Recent"
-                const recent = [...questionsData].reverse().slice(0, 5);
-                recent.forEach((item, index) => {
+                suggestedQuestionsList.innerHTML = '';
+                // Display the first 8 questions from the sheet
+                const suggested = questionsData.slice(0, 8);
+                suggested.forEach((item, index) => {
                     const li = document.createElement('li');
-                    li.innerHTML = `<span class="text-gray-400">${index + 1}.</span> ${item.question}`;
+                    li.innerHTML = `<span class="text-blue-500 mr-2">&#8227;</span>${item.question}`;
                     li.className = 'question-link hover:text-blue-600 cursor-pointer transition-colors';
                     li.onclick = () => handleQuestionClick(item.question);
-                    recentQuestionsList.appendChild(li);
+                    suggestedQuestionsList.appendChild(li);
                 });
             } else {
-                recentQuestionsList.innerHTML = '<li class="text-gray-500 italic">No questions found.</li>';
-            }
-        }
-
-        function populateFAQ() {
-            if (questionsData.length > 0) {
-                faqList.innerHTML = '';
-                // Display the first 5 questions from the sheet as "FAQ"
-                const faq = questionsData.slice(0, 5);
-                faq.forEach((item, index) => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span class="text-gray-400">${index + 1}.</span> ${item.question}`;
-                    li.className = 'question-link hover:text-blue-600 cursor-pointer transition-colors';
-                    li.onclick = () => handleQuestionClick(item.question);
-                    faqList.appendChild(li);
-                });
-            } else {
-                faqList.innerHTML = '<li class="text-gray-500 italic">No frequently asked questions found.</li>';
+                suggestedQuestionsList.innerHTML = '<li class="text-gray-500 italic md:col-span-2">No questions found.</li>';
             }
         }
 
@@ -437,18 +404,13 @@
         document.addEventListener('DOMContentLoaded', async () => {
             if (!GOOGLE_SHEET_CSV_URL || GOOGLE_SHEET_CSV_URL === 'PASTE_YOUR_PUBLISHED_GOOGLE_SHEET_URL_HERE') {
                 answerText.textContent = "Google Sheet URL is not configured. Please update the GOOGLE_SHEET_CSV_URL in the script.";
-                recentQuestionsList.innerHTML = '<li>Sheet not configured.</li>';
-                faqList.innerHTML = '<li>Sheet not configured.</li>';
+                suggestedQuestionsList.innerHTML = '<li>Sheet not configured.</li>';
             } else {
                 await fetchSheetData();
-                populateFAQ();
-                populateRecentQuestions();
+                populateSuggestedQuestions();
             }
         });
     </script>
 </body>
-
 </html>
-
-
 
