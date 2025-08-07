@@ -419,7 +419,7 @@
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', async () => {
-            if (!GOOGLE_SHEET_CSV_URL || GOOGLE_SHEET_CSV_URL === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTU51pLpAOuaQfjNOfNAryi0r0tOlmktxIhHamzy0wCzp02ng4BKxE7ubddaM2mHCfIbxQgxFkn_mtt/pub?gid=0&single=true&output=csv') {
+            if (!GOOGLE_SHEET_CSV_URL || GOOGLE_SHEET_CSV_URL === 'PASTE_YOUR_PUBLISHED_GOOGLE_SHEET_URL_HERE') {
                 answerText.textContent = "Google Sheet URL is not configured. Please update the GOOGLE_SHEET_CSV_URL in the script.";
                 recentQuestionsList.innerHTML = '<li>Sheet not configured.</li>';
                 faqList.innerHTML = '<li>Sheet not configured.</li>';
@@ -433,4 +433,5 @@
 </body>
 
 </html>
+
 
